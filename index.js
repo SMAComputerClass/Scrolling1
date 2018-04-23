@@ -408,22 +408,26 @@ function checkKey(evt) {
   switch (key) {
     case ARROW_RIGHT:
 
-      console.log("Right key is pressed");
+      // console.log("**************** Right key is pressed **********");
+      // console.log("**************** Right key is pressed **********");
       processEvent(currentSquare, MOVE_RIGHT_EVENT); // ppp
       break;
     case ARROW_LEFT:
 
-      console.log("left key is pressed");
+      // console.log("**************** Left key is pressed **********");
+      //console.log("**************** Left key is pressed **********");
       processEvent(currentSquare, MOVE_LEFT_EVENT); // ppp
       break;
     case ARROW_DOWN:
 
-      console.log("down key is pressed");
+      // console.log("**************** Down key is pressed **********");
+      // console.log("**************** Down key is pressed **********");
       processEvent(currentSquare, MOVE_DOWN_EVENT); // ppp
       break;
     case ARROW_UP:
 
-      console.log("Up key is pressed");
+      // console.log("**************** Up key is pressed **********");
+      // console.log("**************** Up key is pressed **********");
       processEvent(currentSquare, MOVE_UP_EVENT); // ppp
       break;
     default:
@@ -444,25 +448,13 @@ function processEvent(pos, code)
       if (checkLegalMove(currentSquare, RIGHT) == false) return;
 
       currentSquare++;
-
-      // bbb
       redrawView();
-
-      // Old code before scrolling  -------------
-      // playerDirection = RIGHT;  // relic of pac man, not needed
-      // processSquare(currentSquare - 1);
-      // processSquare(currentSquare);
-      // -----------------------------------
-
 
       break;
     case MOVE_LEFT_EVENT:
       if (checkLegalMove(currentSquare, LEFT) == false) return;
 
       currentSquare = currentSquare - 1;
-      //playerDirection = LEFT;
-      // processSquare(currentSquare);
-      // processSquare(currentSquare + 1);
       redrawView();
 
       break;
@@ -470,9 +462,6 @@ function processEvent(pos, code)
       if (checkLegalMove(currentSquare, DOWN) == false) return;
 
       currentSquare = currentSquare + boardSize;
-      //playerDirection = DOWN;
-      // processSquare(currentSquare - boardSize);
-      // processSquare(currentSquare);
       redrawView();
 
       break;
@@ -480,12 +469,10 @@ function processEvent(pos, code)
       if (checkLegalMove(currentSquare, UP) == false) return;
 
       currentSquare = currentSquare - boardSize;
-      //playerDirection = UP;
-      // processSquare(currentSquare + boardSize);
-      // processSquare(currentSquare);
       redrawView();
 
       break;
+
       // case FIND_TREASURE_EVENT:
       //  if (currentSquare==) return;
       //
@@ -495,6 +482,7 @@ function processEvent(pos, code)
       //  processSquare(currentSquare+boardSize);
       //
       //  break;
+
     default:
 
   }
@@ -551,7 +539,7 @@ function redrawView()
 
 function processSquare(pos)
 {
-  var squareStatus = getSquareStatus(pos); // bbb
+  var squareStatus = getSquareStatus(pos);
   //var squares = document.querySelectorAll('.square');  // faster to get first?
 
   console.log ("Get Square Status called for current square = " + currentSquare + " Pos is " + pos + " Status is "+ squareStatus);
@@ -924,24 +912,43 @@ function getRowOffset()
   var rowOffset = 0;
   var center = ((boardSize * boardSize)-1)/2;
   var half = (boardSize - 1)/2;
-
   var finished = false;
   var tempCurr = currentSquare;
+  var tempRowOffset = 0;
+  var offCenterRowOffset;
 
   //  If you are in my row, return 0
+  //  Works whether you are in the center or not
   if (Math.abs(tempCurr - center) <= half)
+  {
+    // console.log("You're in my row.");
     return 0;
+  }
 
   //  if you are in my col, return the distance between us
+  //  But consider if you are out of the center
   if ((Math.abs(tempCurr - center) % boardSize) == 0)
   {
-    console.log("You are in my column tempCurr is " + tempCurr + "  Center is " + center);
-    return ((tempCurr - center) / boardSize);
+    // console.log("You are in my column tempCurr is " + tempCurr + "  Center is " + center);
+    tempRowOffset = ((tempCurr - center) / boardSize);
+
+    // check if off center and adjust
+    if (Math.abs(tempRowOffset) > (half/2))
+    {
+      if (tempRowOffset > 0)
+        rowOffset = tempRowOffset - (tempRowOffset - (half/2));
+      else
+        rowOffset = tempRowOffset + (Math.abs(tempRowOffset) - (half/2));
+
+      return rowOffset;
+    }
   }
+
+  // If you are not in my row or col
   // Cycle through bringing tempCurr close to my row
   while (Math.abs(tempCurr - center) > half)
   {
-    console.log("Shouldn't get here if I am in your column");
+    // console.log ("You're not in my row or col.")
     if (currentSquare > center)
     {
       tempCurr = tempCurr - boardSize;
@@ -952,6 +959,18 @@ function getRowOffset()
       tempCurr = tempCurr + boardSize;
       rowOffset--;
     }
+  }
+
+  // console.log("Row offset before off center check is " + rowOffset);
+
+  // check if off center and adjust
+  if (Math.abs(rowOffset) > (half/2))
+  {
+    if (rowOffset > 0)
+      rowOffset = rowOffset - (rowOffset - (half/2));
+    else
+      rowOffset = rowOffset + (Math.abs(rowOffset) - (half/2));
+
   }
 
   return rowOffset;
@@ -971,22 +990,55 @@ function getColOffset()
 
   //  If you are in my column, return 0
   if ((Math.abs(tempCurr - center) % boardSize) == 0)
+  {
+    // console.log("You're in my column");
     return 0;
-
+  }
   //  if you are in my row, return the distance between us in columns
+  // check if too far first
   if (Math.abs(tempCurr - center) <= half)
-    return (tempCurr-center) % center;
+  {
+    colOffset = (tempCurr-center) % center;
+
+    // check if off center and adjust
+    if (Math.abs(colOffset) > (half/2))
+    {
+      if (colOffset > 0)
+        colOffset = colOffset - (colOffset - (half/2));
+      else
+        colOffset = colOffset + (Math.abs(colOffset) - (half/2));
+    }
+
+    // console.log("You are in my row - col check");
+    return colOffset;
+
+  }
 
   // Cycle through bringing tempCurr close to my row
   while (Math.abs(tempCurr - center) > half)
   {
+    // console.log("Col check - not in my row or col");
     if (currentSquare > center)
       tempCurr = tempCurr - boardSize;
     else
       tempCurr = tempCurr + boardSize;
   }
 
-  return (tempCurr-center) % center;
+  colOffset = tempCurr - center;
+
+  // check if off board
+  // console.log("Col offset before off center check is " + colOffset);
+
+  // check if off center and adjust
+  if (Math.abs(colOffset) > (half/2))
+  {
+    if (colOffset > 0)
+      colOffset = colOffset - (colOffset - (half/2));
+    else
+      colOffset = colOffset + (Math.abs(colOffset) - (half/2));
+  }
+
+  return colOffset;
 }
 
 // --------------------------------------------
@@ -995,6 +1047,13 @@ function getSquareStatus(pos)
 {
   // pos passed in will always be from 0 to ((viewSize * viewSize)-1)
 
+  // check if player is the center vs moving off center
+
+  console.log("------ In getSquareStatus -----------");
+
+  var checkIfInCenterSquare
+
+
   var treasureType = 0;
   var NPCNameNum;
   var row = Math.floor(pos/viewSize);
@@ -1002,7 +1061,6 @@ function getSquareStatus(pos)
   // calculate offsets from center
   var rowOffset = getRowOffset();
   var colOffset = getColOffset();
-
 
   // ppp - bbb - zzz continue here - Might not be right --------
   var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
@@ -1015,7 +1073,7 @@ function getSquareStatus(pos)
   if (newPos == currentSquare) // pac man found
   {
     // Check for Pac Man on a treasure
-    // treasureType = checkForTreasure(pos);
+    treasureType = checkForTreasure(pos);
 
     if (treasureType > 0)
     {
@@ -1116,26 +1174,18 @@ function getSquareStatus(pos)
 function checkForTreasure(pos)
 {
   var i = 0;
-
   // check for ghosts in specific order
   var treasureFound = false;
   var row = Math.floor(pos/viewSize);
 
+  // calculate offsets from center
+  var rowOffset = getRowOffset();
+  var colOffset = getColOffset();
 
-    // calculate offsets from center
-    var rowOffset = getRowOffset();
-    var colOffset = getColOffset();
+  var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
+  var newPos = anchorPos + (rowOffset*boardSize) + colOffset;
 
-    // ppp - bbb - zzz continue here - Might not be right --------
-    var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
-    var newPos = anchorPos + (rowOffset*boardSize) + colOffset;
-
-  var newPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
-  // console.log("In check for treasure square pos is " + pos + " - Actual pos is " + newPos);
-
-  // alert("New Pos 2 is " + newPos);
-
-  // you always need to go through the entire array of ghosts to check for special ones.
+  // you always need to go through the entire array of treasures to check for special ones.
   while ((treasureFound == false) && (i < treasures.length)) {
     if (treasures[i][TREASURE_INDEX_POSITION] == newPos)
       treasureFound = true;
@@ -1152,7 +1202,8 @@ function checkForTreasure(pos)
 
 // --------------------------------------------
 
-function checkForNPC(pos) {
+function checkForNPC(pos)
+{
   var i = 0;
   var NPCFound = false;
 
@@ -1220,19 +1271,23 @@ function createTreasures()
   var foundSpot;
   var treasureType;
   var i;
-  for (i = 0; i < treasureAmount; i++) {
+  for (i = 0; i < treasureAmount; i++)
+  {
     treasureTypeNumber = Math.floor((Math.random() * 3) + 1);
     foundSpot = false;
-    while (foundSpot == false) {
+    while (foundSpot == false)
+    {
 
-      // treasurePosition = Math.floor((Math.random() * (boardSize * boardSize)));
-      treasurePosition =  48;
+      treasurePosition = Math.floor((Math.random() * (boardSize * boardSize)));
+      // treasurePosition =  48; - Dad test
 
       if (currentSquare != treasurePosition) {
         foundSpot = true;
       } // end if safe spot for a wall
     }
-    switch (treasureTypeNumber) {
+
+    switch (treasureTypeNumber)
+    {
       case 1:
         treasureType = TREASURE_TYPE_BAD;
         treasures.push([treasurePosition, treasureType])
@@ -1247,12 +1302,14 @@ function createTreasures()
         break;
       default:
     }
+
+    console.log("Treasure added in position = " + treasurePosition + " of type = " + treasureType);
   }
 }
 
   function createNPCs() {
-    var NPCAmount = 1;//hard coded amount of npcs that exist, right now only 1
-    //var NPCAmount = 2;//hard coded amount of npcs that exist, right now only 1
+    // var NPCAmount = 1;// Test version - Dad - hard coded amount of npcs that exist, right now only 1
+    var NPCAmount = 2;//hard coded amount of npcs that exist, right now only 1
 
     var NPCPosition;
     var NPCNameNumber = 1;
@@ -1265,8 +1322,8 @@ function createTreasures()
 
       while (foundSpot == false) {
 
-        // NPCPosition = Math.floor((Math.random() * (boardSize * boardSize)));
-        NPCPosition = 60;
+        NPCPosition = Math.floor((Math.random() * (boardSize * boardSize)));
+        // NPCPosition = 60; // Dad test
 
         if (currentSquare != NPCPosition) {
           foundSpot = true;
@@ -1395,7 +1452,7 @@ document.getElementById("title").style.visibility = "hidden";
 themesong.play();
 
 createBoard();
-// createTreasures();
+createTreasures();
 createNPCs();
 squares = document.querySelectorAll('.square'); // faster to get first?
 
