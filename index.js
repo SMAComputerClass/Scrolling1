@@ -1,5 +1,5 @@
 'use strict';
-var today = "4-21-18";
+var today = "4-23-18";  // fully working scrolling, I think!
 var yourCharacter = "";
 var yourCharacterName;
 var opponentHealth = 100;
@@ -13,10 +13,10 @@ var yourCharisma;
 var yourLevel;
 var yourClass;
 var yourExperience = 0;
-var boardSize = 9;  // increase from 8 to 9 for scrolling
-var viewSize = 5;   // only the visible squares to facilitate scrolling
+var boardSize = 15;  // increase from 8 to 9 for scrolling
+var viewSize = 3;   // only the visible squares to facilitate scrolling
 var hiddenPadding = (boardSize - viewSize)/2;  // # of hidden rows and columns if starting at center of board
-var currentSquare = 40; // start in middle of the screen
+var currentSquare = ((boardSize * boardSize)-1) / 2; // start in middle of the screen
 // var playerDirection;
 
 var squares; // define globally once, going to be array of individual squares
@@ -911,11 +911,12 @@ function getRowOffset()
 {
   var rowOffset = 0;
   var center = ((boardSize * boardSize)-1)/2;
-  var half = (boardSize - 1)/2;
+  var half = (boardSize - 1)/2;  // half of the board not counting center
   var finished = false;
   var tempCurr = currentSquare;
   var tempRowOffset = 0;
-  var offCenterRowOffset;
+
+  // console.log ("In get row offset - tempCurr = " + tempCurr + " center = " + center + " half = " + half);
 
   //  If you are in my row, return 0
   //  Works whether you are in the center or not
@@ -929,16 +930,16 @@ function getRowOffset()
   //  But consider if you are out of the center
   if ((Math.abs(tempCurr - center) % boardSize) == 0)
   {
-    // console.log("You are in my column tempCurr is " + tempCurr + "  Center is " + center);
     tempRowOffset = ((tempCurr - center) / boardSize);
+    // console.log("You are in my column tempCurr is " + tempCurr + "  Center is " + center + " Half is " + half + " tempRowOffset is " + tempRowOffset );
 
     // check if off center and adjust
-    if (Math.abs(tempRowOffset) > (half/2))
+    if (Math.abs(tempRowOffset) > hiddenPadding)
     {
       if (tempRowOffset > 0)
-        rowOffset = tempRowOffset - (tempRowOffset - (half/2));
+        rowOffset = tempRowOffset - (tempRowOffset - hiddenPadding);
       else
-        rowOffset = tempRowOffset + (Math.abs(tempRowOffset) - (half/2));
+        rowOffset = tempRowOffset + (Math.abs(tempRowOffset) - hiddenPadding);
 
       return rowOffset;
     }
@@ -964,12 +965,12 @@ function getRowOffset()
   // console.log("Row offset before off center check is " + rowOffset);
 
   // check if off center and adjust
-  if (Math.abs(rowOffset) > (half/2))
+  if (Math.abs(rowOffset) > hiddenPadding)
   {
     if (rowOffset > 0)
-      rowOffset = rowOffset - (rowOffset - (half/2));
+      rowOffset = rowOffset - (rowOffset - hiddenPadding);
     else
-      rowOffset = rowOffset + (Math.abs(rowOffset) - (half/2));
+      rowOffset = rowOffset + (Math.abs(rowOffset) - hiddenPadding);
 
   }
 
@@ -988,6 +989,8 @@ function getColOffset()
   var finished = false;
   var tempCurr = currentSquare;
 
+  // console.log ("In get col offset");
+
   //  If you are in my column, return 0
   if ((Math.abs(tempCurr - center) % boardSize) == 0)
   {
@@ -998,15 +1001,16 @@ function getColOffset()
   // check if too far first
   if (Math.abs(tempCurr - center) <= half)
   {
+    // console.log("You're in my row within col offset");
     colOffset = (tempCurr-center) % center;
 
     // check if off center and adjust
-    if (Math.abs(colOffset) > (half/2))
+    if (Math.abs(colOffset) > hiddenPadding)
     {
       if (colOffset > 0)
-        colOffset = colOffset - (colOffset - (half/2));
+        colOffset = colOffset - (colOffset - hiddenPadding);
       else
-        colOffset = colOffset + (Math.abs(colOffset) - (half/2));
+        colOffset = colOffset + (Math.abs(colOffset) - hiddenPadding);
     }
 
     // console.log("You are in my row - col check");
@@ -1030,12 +1034,12 @@ function getColOffset()
   // console.log("Col offset before off center check is " + colOffset);
 
   // check if off center and adjust
-  if (Math.abs(colOffset) > (half/2))
+  if (Math.abs(colOffset) > hiddenPadding)
   {
     if (colOffset > 0)
-      colOffset = colOffset - (colOffset - (half/2));
+      colOffset = colOffset - (colOffset - hiddenPadding);
     else
-      colOffset = colOffset + (Math.abs(colOffset) - (half/2));
+      colOffset = colOffset + (Math.abs(colOffset) - hiddenPadding);
   }
 
   return colOffset;
@@ -1062,8 +1066,10 @@ function getSquareStatus(pos)
   var rowOffset = getRowOffset();
   var colOffset = getColOffset();
 
-  // ppp - bbb - zzz continue here - Might not be right --------
-  var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
+  // ppp - bbb - zzz Anchor Pos is wrong  --------
+  // var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
+  var anchorPos = pos + (hiddenPadding * boardSize) + (((row + 1) * 2 * hiddenPadding) - hiddenPadding);
+
   var newPos = anchorPos + (rowOffset*boardSize) + colOffset;
 
   console.log("Get Square Status - Current square is " + currentSquare + "  Pos is " + pos + "  Anchor pos is " + anchorPos + "  row offset is " + rowOffset + "  Col offset is " + colOffset + "  New pos is " + newPos);
@@ -1182,7 +1188,8 @@ function checkForTreasure(pos)
   var rowOffset = getRowOffset();
   var colOffset = getColOffset();
 
-  var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
+  //var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
+  var anchorPos = pos + (hiddenPadding * boardSize) + (((row + 1) * 2 * hiddenPadding) - hiddenPadding);
   var newPos = anchorPos + (rowOffset*boardSize) + colOffset;
 
   // you always need to go through the entire array of treasures to check for special ones.
@@ -1214,7 +1221,9 @@ function checkForNPC(pos)
   var colOffset = getColOffset();
 
   // ppp - bbb - zzz continue here - Might not be right --------
-  var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
+  // var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
+  var anchorPos = pos + (hiddenPadding * boardSize) + (((row + 1) * 2 * hiddenPadding) - hiddenPadding);
+
   var newPos = anchorPos + (rowOffset*boardSize) + colOffset;
 
   // console.log("Get Square Status - Current square is " + currentSquare + "  Pos is " + pos + "  Anchor pos is " + anchorPos + "  row offset is " + rowOffset + "  Col offset is " + colOffset + "  New pos is " + newPos);
