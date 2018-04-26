@@ -13,8 +13,8 @@ var yourCharisma;
 var yourLevel;
 var yourClass;
 var yourExperience = 0;
-var boardSize = 15;  // increase from 8 to 9 for scrolling
-var viewSize = 3;   // only the visible squares to facilitate scrolling
+var boardSize = 9;  // increase from 8 to 9 for scrolling
+var viewSize = 7;   // only the visible squares to facilitate scrolling
 var hiddenPadding = (boardSize - viewSize)/2;  // # of hidden rows and columns if starting at center of board
 var currentSquare = ((boardSize * boardSize)-1) / 2; // start in middle of the screen
 // var playerDirection;
@@ -93,9 +93,8 @@ var biggyCheeseSound = new Audio("biggy cheese sound.wav")
 var bizmoFunionsSound = new Audio("bizmo funions sound.wav");
 themesong.loop = false;
 
-themesong.volume = 0;
-
-// themesong.volume = 0.05;
+// themesong.volume = 0;
+themesong.volume = 0.05;
 
 // ------------------------------------------------
 
@@ -907,31 +906,38 @@ function getGoodTreasure()
 
 // -------------------------------------
 
-function getRowOffset()
+function getOffsets()
 {
   var rowOffset = 0;
+  var colOffset = 0;
   var center = ((boardSize * boardSize)-1)/2;
   var half = (boardSize - 1)/2;  // half of the board not counting center
   var finished = false;
   var tempCurr = currentSquare;
   var tempRowOffset = 0;
+  var rowOffsetFound = false;
+  var colOffsetFound = false;
 
-  // console.log ("In get row offset - tempCurr = " + tempCurr + " center = " + center + " half = " + half);
+  // console.log ("In new get offsets - tempCurr = " + tempCurr + " center = " + center + " half = " + half);
 
   //  If you are in my row, return 0
   //  Works whether you are in the center or not
   if (Math.abs(tempCurr - center) <= half)
   {
-    // console.log("You're in my row.");
-    return 0;
+    console.log("You're in my row.");
+    rowOffset = 0;
+    rowOffsetFound = true;
   }
-
-  //  if you are in my col, return the distance between us
+  //  if you weren't in my row, check if u are in my col, return the distance between us
   //  But consider if you are out of the center
-  if ((Math.abs(tempCurr - center) % boardSize) == 0)
+  if ((rowOffsetFound == false) & ((Math.abs(tempCurr - center) % boardSize) == 0))
   {
+    colOffset = 0;
+    colOffsetFound = true;
     tempRowOffset = ((tempCurr - center) / boardSize);
-    // console.log("You are in my column tempCurr is " + tempCurr + "  Center is " + center + " Half is " + half + " tempRowOffset is " + tempRowOffset );
+    console.log("You are in my column tempCurr is " + tempCurr + "  Center is " + center + " Half is " + half + " tempRowOffset is " + tempRowOffset );
+
+    rowOffsetFound = true;
 
     // check if off center and adjust
     if (Math.abs(tempRowOffset) > hiddenPadding)
@@ -940,69 +946,49 @@ function getRowOffset()
         rowOffset = tempRowOffset - (tempRowOffset - hiddenPadding);
       else
         rowOffset = tempRowOffset + (Math.abs(tempRowOffset) - hiddenPadding);
-
-      return rowOffset;
-    }
-  }
-
-  // If you are not in my row or col
-  // Cycle through bringing tempCurr close to my row
-  while (Math.abs(tempCurr - center) > half)
-  {
-    // console.log ("You're not in my row or col.")
-    if (currentSquare > center)
-    {
-      tempCurr = tempCurr - boardSize;
-      rowOffset++
     }
     else
     {
-      tempCurr = tempCurr + boardSize;
-      rowOffset--;
+        rowOffset = tempRowOffset;
     }
-  }
+  }  // end if you are in my column
 
-  // console.log("Row offset before off center check is " + rowOffset);
+  // If you are not in my row or column - Execute loop to bring cell down to my rows
 
-  // check if off center and adjust
-  if (Math.abs(rowOffset) > hiddenPadding)
-  {
-    if (rowOffset > 0)
-      rowOffset = rowOffset - (rowOffset - hiddenPadding);
-    else
-      rowOffset = rowOffset + (Math.abs(rowOffset) - hiddenPadding);
+    // Check if rowOffset already done... if no, then you are not in my row or col
+    // Cycle through bringing tempCurr close to my row
+    while ((Math.abs(tempCurr - center) > half) && (rowOffsetFound == false))
+    {
+      console.log ("You're not in my row or col.")
+      if (currentSquare > center)
+      {
+        tempCurr = tempCurr - boardSize;
+        rowOffset++
+      }
+      else
+      {
+        tempCurr = tempCurr + boardSize;
+        rowOffset--;
+      }
+    }
 
-  }
+    console.log("Row offset before off center check is " + rowOffset);
 
-  return rowOffset;
+    // check if off center and adjust
+    if (Math.abs(rowOffset) > hiddenPadding)
+    {
+      if (rowOffset > 0)
+        rowOffset = rowOffset - (rowOffset - hiddenPadding);
+      else
+        rowOffset = rowOffset + (Math.abs(rowOffset) - hiddenPadding);
 
-}
+    }
 
-// --------------------------------------------
-
-function getColOffset()
-{
-  var colOffset = 0;
-  var center = ((boardSize * boardSize)-1)/2;
-  var half = (boardSize - 1)/2;
-
-  var finished = false;
-  var tempCurr = currentSquare;
-
-  // console.log ("In get col offset");
-
-  //  If you are in my column, return 0
-  if ((Math.abs(tempCurr - center) % boardSize) == 0)
-  {
-    // console.log("You're in my column");
-    return 0;
-  }
-  //  if you are in my row, return the distance between us in columns
-  // check if too far first
-  if (Math.abs(tempCurr - center) <= half)
-  {
-    // console.log("You're in my row within col offset");
-    colOffset = (tempCurr-center) % center;
+    if (colOffsetFound == false)
+    {
+      // calc colOffset last, should be in my row now
+      colOffset = (tempCurr-center) % center;
+    }
 
     // check if off center and adjust
     if (Math.abs(colOffset) > hiddenPadding)
@@ -1013,38 +999,12 @@ function getColOffset()
         colOffset = colOffset + (Math.abs(colOffset) - hiddenPadding);
     }
 
-    // console.log("You are in my row - col check");
-    return colOffset;
+    console.log (" Returning row and col " + rowOffset + " " + colOffset)
+    return [rowOffset, colOffset];
 
-  }
+}  // end function get offsets
 
-  // Cycle through bringing tempCurr close to my row
-  while (Math.abs(tempCurr - center) > half)
-  {
-    // console.log("Col check - not in my row or col");
-    if (currentSquare > center)
-      tempCurr = tempCurr - boardSize;
-    else
-      tempCurr = tempCurr + boardSize;
-  }
-
-  colOffset = tempCurr - center;
-
-  // check if off board
-  // console.log("Col offset before off center check is " + colOffset);
-
-  // check if off center and adjust
-  if (Math.abs(colOffset) > hiddenPadding)
-  {
-    if (colOffset > 0)
-      colOffset = colOffset - (colOffset - hiddenPadding);
-    else
-      colOffset = colOffset + (Math.abs(colOffset) - hiddenPadding);
-  }
-
-  return colOffset;
-}
-
+// -------------------------------------
 // --------------------------------------------
 
 function getSquareStatus(pos)
@@ -1063,16 +1023,15 @@ function getSquareStatus(pos)
   var row = Math.floor(pos/viewSize);
 
   // calculate offsets from center
-  var rowOffset = getRowOffset();
-  var colOffset = getColOffset();
+  var offsets = getOffsets();
 
   // ppp - bbb - zzz Anchor Pos is wrong  --------
   // var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
   var anchorPos = pos + (hiddenPadding * boardSize) + (((row + 1) * 2 * hiddenPadding) - hiddenPadding);
 
-  var newPos = anchorPos + (rowOffset*boardSize) + colOffset;
+  var newPos = anchorPos + (offsets[0]*boardSize) + offsets[1];
 
-  console.log("Get Square Status - Current square is " + currentSquare + "  Pos is " + pos + "  Anchor pos is " + anchorPos + "  row offset is " + rowOffset + "  Col offset is " + colOffset + "  New pos is " + newPos);
+  console.log("Get Square Status - Current square is " + currentSquare + "  Pos is " + pos + "  Anchor pos is " + anchorPos + "  row offset is " + offsets[0] + "  Col offset is " + offsets[1] + "  New pos is " + newPos);
 
   // console.log("In get square status square pos is " + pos + " - Actual pos is " + newPos);
 
@@ -1185,12 +1144,12 @@ function checkForTreasure(pos)
   var row = Math.floor(pos/viewSize);
 
   // calculate offsets from center
-  var rowOffset = getRowOffset();
-  var colOffset = getColOffset();
+  var offsets = getOffsets();
 
-  //var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
   var anchorPos = pos + (hiddenPadding * boardSize) + (((row + 1) * 2 * hiddenPadding) - hiddenPadding);
-  var newPos = anchorPos + (rowOffset*boardSize) + colOffset;
+  var newPos = anchorPos + (offsets[0]*boardSize) + offsets[1];
+
+  console.log("Check for NPC - Current square is " + currentSquare + "  Pos is " + pos + "  Anchor pos is " + anchorPos + "  row offset is " + offsets[0] + "  Col offset is " + offsets[1] + "  New pos is " + newPos);
 
   // you always need to go through the entire array of treasures to check for special ones.
   while ((treasureFound == false) && (i < treasures.length)) {
@@ -1217,19 +1176,12 @@ function checkForNPC(pos)
   var row = Math.floor(pos/viewSize);
 
   // calculate offsets from center
-  var rowOffset = getRowOffset();
-  var colOffset = getColOffset();
+  var offsets = getOffsets();
 
-  // ppp - bbb - zzz continue here - Might not be right --------
-  // var anchorPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
   var anchorPos = pos + (hiddenPadding * boardSize) + (((row + 1) * 2 * hiddenPadding) - hiddenPadding);
+  var newPos = anchorPos + (offsets[0]*boardSize) + offsets[1];
 
-  var newPos = anchorPos + (rowOffset*boardSize) + colOffset;
-
-  // console.log("Get Square Status - Current square is " + currentSquare + "  Pos is " + pos + "  Anchor pos is " + anchorPos + "  row offset is " + rowOffset + "  Col offset is " + colOffset + "  New pos is " + newPos);
-
-  //var newPos = pos + (hiddenPadding * boardSize) + ((((row+1) * hiddenPadding) - 1) * hiddenPadding);
-  // console.log("In check for NPC square pos is " + pos + " - Actual pos is " + newPos);
+  console.log("Check for NPC - Current square is " + currentSquare + "  Pos is " + pos + "  Anchor pos is " + anchorPos + "  row offset is " + offsets[0] + "  Col offset is " + offsets[1] + "  New pos is " + newPos);
 
   // Check for NPCs unti you found one, don't need to check the whole array
   while ((NPCFound == false) && (i < NPCs.length)) {
