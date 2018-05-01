@@ -13,8 +13,8 @@ var yourCharisma;
 var yourLevel;
 var yourClass;
 var yourExperience = 0;
-var boardSize = 9;  // increase from 8 to 9 for scrolling
-var viewSize = 7;   // only the visible squares to facilitate scrolling
+var boardSize = 7;  // increase from 8 to 9 for scrolling
+var viewSize = 5;   // only the visible squares to facilitate scrolling
 var hiddenPadding = (boardSize - viewSize)/2;  // # of hidden rows and columns if starting at center of board
 var currentSquare = ((boardSize * boardSize)-1) / 2; // start in middle of the screen
 // var playerDirection;
@@ -53,6 +53,7 @@ var SQ_STATUS_PAC_ON_ICHABOD_TRISKET = 8;
 var SQ_STATUS_ICHABOD_TRISKET = 9;
 var SQ_STATUS_PAC_ON_FLOJO_SUMMERSTREAM = 10;
 var SQ_STATUS_FLOJO_SUMMERSTREAM = 11;
+var SQ_STATUS_WALL = 12;
 
 var SQ_STATUS_TREASURE_BAD = 20;
 var SQ_STATUS_TREASURE_MEDIUM = 21;
@@ -83,6 +84,7 @@ var ICON_TREASURE = "<img src='adlani grass.jpg'>";
 var treasures = new Array;
 var NPCs = new Array;
 var yourLoot = new Array;
+var walls = new Array;
 
 var themesong = new Audio("peanuts song.mp3");
 var hotFudgeSound = new Audio("hot fudge sound.wav");
@@ -121,6 +123,7 @@ function chooseAdlani() {
     yourCharisma = 5;
     yourBoardIcon = "<img src= 'adlani grass.jpg'>"
     calculateClass();
+    createWalls();
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
 
     var i;
@@ -157,6 +160,7 @@ function chooseNoah() {
     yourVitality = 4;
     yourCharisma = 5;
     calculateClass();
+    createWalls();
     yourBoardIcon = "<img src= 'noah grass.jpg'>";
     // processSquare(currentSquare);
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
@@ -192,6 +196,7 @@ function chooseJoey() {
     yourCharisma = 10;
     yourBoardIcon = "<img src= 'joey grass.jpg'>"
     calculateClass();
+    createWalls();
     // processSquare(currentSquare);
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
     var i;
@@ -227,6 +232,7 @@ function chooseCarlo() {
     yourBoardIcon = "<img src= 'carlo grass.jpg'>";
     // processSquare(currentSquare);
     calculateClass();
+    createWalls();
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
     var i;
     for (i = 0; i < squares.length; i++) {
@@ -262,6 +268,7 @@ function chooseDiego() {
     yourBoardIcon = "<img src= 'diego grass.jpg'>";
     // processSquare(currentSquare);
     calculateClass();
+    createWalls();
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
     var i;
     for (i = 0; i < squares.length; i++) {
@@ -297,6 +304,7 @@ function chooseJon() {
     yourBoardIcon = "<img src= 'jon grass.jpg'>";
     // processSquare(currentSquare);
     calculateClass();
+    createWalls();
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
     var i;
     for (i = 0; i < squares.length; i++) {
@@ -489,22 +497,52 @@ function processEvent(pos, code)
 
 // -------------------------------------------------
 
+// Position in this function is current square within board size, not pos within view size
+
 function checkLegalMove(position, direction) {
   switch (direction) {
     case UP:
 
-      if (position < boardSize) return false;
+      if (position < boardSize)
+        return false;
+      else
+      {
+          // legal move, now check the square for an obstruction wall
+          if (walls[position - boardSize] == 0)
+            return true;
+          else
+            return false;
+      }
+
       break;
 
     case DOWN:
 
-      if (position > (boardSize * boardSize) - (boardSize + 1)) return false;
+      if (position > (boardSize * boardSize) - (boardSize + 1))
+        return false;
+      else
+      {
+          // legal move, now check the square for an obstruction wall
+          if (walls[position + boardSize] == 0)
+            return true;
+          else
+            return false;
+      }
+
       break;
 
     case LEFT:
 
       if (position % boardSize == 0)
         return false;
+      else
+      {
+        // legal move, now check the square for an obstruction wall
+        if (walls[position-1] == 0)
+          return true;
+        else
+          return false;
+      }
 
       break;
 
@@ -512,6 +550,14 @@ function checkLegalMove(position, direction) {
 
       if ((position % boardSize) == (boardSize - 1))
         return false;
+      else
+      {
+        // legal move, now check the square for an obstruction wall
+        if (walls[position+1] == 0)
+          return true;
+        else
+          return false;
+      }
 
       break;
 
@@ -548,6 +594,11 @@ function processSquare(pos)
 
       squares[pos].innerHTML = yourBoardIcon;
       break;
+
+    case SQ_STATUS_WALL:
+
+       squares[pos].innerHTML = "<img src= 'adlani grass.jpg'>";
+       break;
 
     case SQ_STATUS_PAC_ON_TREASURE_BAD:
 
@@ -1035,6 +1086,9 @@ function getSquareStatus(pos)
 
   // console.log("In get square status square pos is " + pos + " - Actual pos is " + newPos);
 
+  if (walls[newPos] == 3)  // check for wall
+    return SQ_STATUS_WALL;
+
   if (newPos == currentSquare) // pac man found
   {
     // Check for Pac Man on a treasure
@@ -1305,6 +1359,13 @@ function createTreasures()
         default:
       }
     }
+}
+
+// ----------------------------------------
+
+function createWalls()
+{
+    walls = [0,0,3,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,3,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0];
 }
 
 // ----------------------------------------
