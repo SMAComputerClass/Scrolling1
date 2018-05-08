@@ -1,3 +1,4 @@
+
 'use strict';
 var today = "4-23-18";  // fully working scrolling, I think!
 var yourCharacter = "";
@@ -13,7 +14,7 @@ var yourCharisma;
 var yourLevel;
 var yourClass;
 var yourExperience = 0;
-var boardSize = 7;  // increase from 8 to 9 for scrolling
+var boardSize = 9;  // increase from 8 to 9 for scrolling
 var viewSize = 7;   // only the visible squares to facilitate scrolling
 var hiddenPadding = (boardSize - viewSize)/2;  // # of hidden rows and columns if starting at center of board
 var currentSquare = ((boardSize * boardSize)-1) / 2; // start in middle of the screen
@@ -48,22 +49,25 @@ var SQ_STATUS_TREASURE_ON_BLANK = 2;
 var SQ_STATUS_PAC_ON_TREASURE_BAD = 3;
 var SQ_STATUS_PAC_ON_TREASURE_MEDIUM = 4;
 var SQ_STATUS_PAC_ON_TREASURE_GOOD = 5;
-
 var SQ_STATUS_NPC_ON_BLANK = 6;
-var SQ_STATUS_PAC_ON_NPC = 7;
+var SQ_STATUS_PAC_ON_NPC = 7;   // Not sure if you need this one???
 var SQ_STATUS_PAC_ON_ICHABOD_TRISKET = 8;
 var SQ_STATUS_ICHABOD_TRISKET = 9;
 var SQ_STATUS_PAC_ON_FLOJO_SUMMERSTREAM = 10;
 var SQ_STATUS_FLOJO_SUMMERSTREAM = 11;
-var SQ_STATUS_WALL = 12;
-var SQ_STATUS_PAC_ON_LOCK = 13;
-var SQ_STATUS_PAC_ON_KEY = 14;
-var SQ_STATUS_LOCK = 15;
-var SQ_STATUS_TREASURE_KEY = 16;
+var SQ_STATUS_PAC_ON_RED_LOCK = 12;
+var SQ_STATUS_PAC_ON_RED_KEY = 13;
+var SQ_STATUS_RED_LOCK = 14;
+var SQ_STATUS_RED_KEY = 15;
+var SQ_STATUS_WALL = 50;
 
 var SQ_STATUS_TREASURE_BAD = 20;
 var SQ_STATUS_TREASURE_MEDIUM = 21;
 var SQ_STATUS_TREASURE_GOOD = 22;
+
+var RED = 1;
+var GREEN = 2;
+var WALL = 1;
 
 var SQ_STATUS_BLANK = 100;
 
@@ -76,7 +80,7 @@ var NPC_INDEX_NAME = 1;
 var TREASURE_TYPE_BAD = 1;
 var TREASURE_TYPE_MEDIUM = 2;
 var TREASURE_TYPE_GOOD = 3;
-var TREASURE_TYPE_KEY = 5;    // possible issue with #4
+var TREASURE_TYPE_RED_KEY = 5;
 
 var NPC_ICHABOD_TRISKET = 1;
 var NPC_FLOJO_SUMMERSTREAM = 2
@@ -86,14 +90,12 @@ var FLOJO_SUMMERSTREAM_CONVERSATION= "Peace out "+yourCharacter+".\nIn future up
 
 var ICON_TREASURE = "<img src='adlani grass.jpg'>";
 
-var ICON_LOCK = "<img src='lock.jpg'>";
-var ICON_KEY = "<img src='key.jpg'>";
-
 var treasures = new Array;
 var NPCs = new Array;
 var yourLoot = new Array;
 var walls = new Array;
 var locks = new Array;
+var yourKeys = new Array;
 
 var themesong = new Audio("peanuts song.mp3");
 var hotFudgeSound = new Audio("hot fudge sound.wav");
@@ -105,7 +107,7 @@ var bizmoFunionsSound = new Audio("bizmo funions sound.wav");
 themesong.loop = false;
 
 themesong.volume = 0;
-//themesong.volume = 0.05;
+// themesong.volume = 0.05;
 
 // ------------------------------------------------
 
@@ -132,7 +134,7 @@ function chooseAdlani() {
     yourCharisma = 5;
     yourBoardIcon = "<img src= 'adlani grass.jpg'>"
     calculateClass();
-    createWalls();
+
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
 
     var i;
@@ -169,7 +171,7 @@ function chooseNoah() {
     yourVitality = 4;
     yourCharisma = 5;
     calculateClass();
-    createWalls();
+
     yourBoardIcon = "<img src= 'noah grass.jpg'>";
     // processSquare(currentSquare);
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
@@ -205,7 +207,7 @@ function chooseJoey() {
     yourCharisma = 10;
     yourBoardIcon = "<img src= 'joey grass.jpg'>"
     calculateClass();
-    createWalls();
+
     // processSquare(currentSquare);
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
     var i;
@@ -241,7 +243,7 @@ function chooseCarlo() {
     yourBoardIcon = "<img src= 'carlo grass.jpg'>";
     // processSquare(currentSquare);
     calculateClass();
-    createWalls();
+
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
     var i;
     for (i = 0; i < squares.length; i++) {
@@ -277,7 +279,7 @@ function chooseDiego() {
     yourBoardIcon = "<img src= 'diego grass.jpg'>";
     // processSquare(currentSquare);
     calculateClass();
-    createWalls();
+
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
     var i;
     for (i = 0; i < squares.length; i++) {
@@ -313,7 +315,7 @@ function chooseJon() {
     yourBoardIcon = "<img src= 'jon grass.jpg'>";
     // processSquare(currentSquare);
     calculateClass();
-    createWalls();
+
     title.innerHTML = "YOUR NAME IS " + yourCharacterName + ", LEVEL " + yourLevel + " " + yourClass;
     var i;
     for (i = 0; i < squares.length; i++) {
@@ -512,18 +514,30 @@ function checkLegalMove(position, direction) {
   switch (direction) {
     case UP:
 
+      console.log("In Check Legal Move Up - position is " + position + "  boardsize is " + boardSize + "  locks pos minus board size has value " + locks[position - boardSize]);
+
       if (position < boardSize)
         return false;
       else
       {
+
           // check for lock and key
-          if (locks[position - boardSize] == 1)
+          switch (locks[position - boardSize])
           {
-            if (foundKey == true)
-              return true;
-            else
-              return false;
+            case RED:
+                for (var i = 0; i < yourKeys.length; i++)
+                {
+                  if(yourKeys[i] == "red key")
+                    return true;
+                }
+
+                return false;
+                break;
+
+            default: ;
+
           }
+
 
           // legal move, now check the square for an obstruction wall
           if (walls[position - boardSize] == 0)
@@ -541,14 +555,21 @@ function checkLegalMove(position, direction) {
       else
       {
 
-          // check for lock and key
-          if (locks[position + boardSize] == 1)
-          {
-            if (foundKey == true)
-              return true;
-            else
+        switch (locks[position + boardSize]) {
+
+          case RED:
+              for (var i = 0; i < yourKeys.length; i++)
+              {
+                if(yourKeys[i] == "red key")
+                  return true;
+              }
+
               return false;
-          }
+              break;
+
+          default: ;     // what is this?
+
+        }
 
           // legal move, now check the square for an obstruction wall
           if (walls[position + boardSize] == 0)
@@ -566,13 +587,20 @@ function checkLegalMove(position, direction) {
       else
       {
 
-        // check for lock and key
-        if (locks[position-1] == 1)
-        {
-          if (foundKey == true)
-            return true;
-          else
-            return false;
+        switch (locks[position - 1]) {
+
+          case RED:
+              for (var i = 0; i < yourKeys.length; i++)
+              {
+                if(yourKeys[i] == "red key")
+                  return true;
+              }
+
+              return false;
+              break;
+
+          default: ;
+
         }
 
         // legal move, now check the square for an obstruction wall
@@ -590,13 +618,21 @@ function checkLegalMove(position, direction) {
         return false;
       else
       {
-        // check for lock and key
-        if (locks[position+1] == 1)
-        {
-          if (foundKey == true)
-            return true;
-          else
-            return false;
+
+        switch (locks[position + 1]) {
+
+          case RED:
+              for (var i = 0; i < yourKeys.length; i++)
+              {
+                if(yourKeys[i] == "red key")
+                  return true;
+              }
+
+              return false;
+              break;
+
+          default: ;
+
         }
 
         // legal move, now check the square for an obstruction wall
@@ -615,6 +651,7 @@ function checkLegalMove(position, direction) {
   return true;
 
 }
+
 
 // -------------------------------
 
@@ -644,7 +681,7 @@ function processSquare(pos)
 
     case SQ_STATUS_WALL:
 
-       squares[pos].innerHTML = "<img src= 'adlani grass.jpg'>";
+       squares[pos].innerHTML = "<img src= 'wall.jpg'>";
        break;
 
     case SQ_STATUS_PAC_ON_TREASURE_BAD:
@@ -738,23 +775,29 @@ function processSquare(pos)
     case SQ_STATUS_TREASURE_GOOD:
 
       // process good
-      showTreasure(pos);
+      showTreasure(pos)
       break;
 
-    case SQ_STATUS_TREASURE_KEY:
+    case SQ_STATUS_RED_LOCK:
 
-        // showTreasure(pos);
-        squares[pos].innerHTML = ICON_KEY;
+        squares[pos].innerHTML = "<img src= 'red lock.jpg'>";
         break;
 
-    case SQ_STATUS_PAC_ON_KEY:
+    case SQ_STATUS_RED_KEY:
+
+        // showTreasure(pos);
+        squares[pos].innerHTML = "<img src= 'red key.jpg'>";
+        break;
+
+    case SQ_STATUS_PAC_ON_RED_KEY:
         foundKey = true;
+        yourKeys.push("red key")
         squares[pos].innerHTML = yourBoardIcon;
         deleteTreasure(pos);
         break;
 
 
-    case SQ_STATUS_PAC_ON_LOCK:
+    case SQ_STATUS_PAC_ON_RED_LOCK:
         locks[currentSquare] = 0;
         squares[pos].innerHTML = yourBoardIcon;
         break;
@@ -797,12 +840,6 @@ function processSquare(pos)
 
       // process good
       break;
-
-    case SQ_STATUS_LOCK:
-
-        squares[pos].innerHTML = ICON_LOCK;
-        break;
-
 
     case SQ_STATUS_BLANK:
 
@@ -860,14 +897,24 @@ function showTreasure(pos) {
 function deleteTreasure(pos) {
   var i = 0;
   var treasureFound = false;
+
+  // new pos calcs
+  var row = Math.floor(pos/viewSize);
+  // calculate offsets from center
+  var offsets = getOffsets();
+  var anchorPos = pos + (hiddenPadding * boardSize) + (((row + 1) * 2 * hiddenPadding) - hiddenPadding);
+  var newPos = anchorPos + (offsets[0]*boardSize) + offsets[1];
+  // console.log("deleteTreasure - Current square is " + currentSquare + "  Pos is " + pos + "  Anchor pos is " + anchorPos + "  row offset is " + offsets[0] + "  Col offset is " + offsets[1] + "  New pos is " + newPos);
+
   while ((treasureFound == false) && (i < treasures.length)) {
-    if (treasures[i][TREASURE_INDEX_POSITION] == pos) {
+    if (treasures[i][TREASURE_INDEX_POSITION] == newPos) {
       treasures.splice(i, 1)
       treasureFound = true;
     }
     else i++
   }
 }
+
 
 function getBadTreasure() {
   var lootAmount = Math.floor((Math.random() * 3 + 1));
@@ -1026,6 +1073,9 @@ function getGoodTreasure()
   }
 }
 
+function yourLootAlert(){
+  alert("Your loot: "+yourLoot+"\nYour keys: "+yourKeys)
+}
 // -------------------------------------
 
 function getOffsets()
@@ -1155,18 +1205,15 @@ function getSquareStatus(pos)
 
   console.log("Get Square Status - Current square is " + currentSquare + "  Pos is " + pos + "  Anchor pos is " + anchorPos + "  row offset is " + offsets[0] + "  Col offset is " + offsets[1] + "  New pos is " + newPos);
 
-
   // console.log("In get square status square pos is " + pos + " - Actual pos is " + newPos);
 
-  if (walls[newPos] == 3)  // check for wall
+  if (walls[newPos] == WALL)  // check for wall
     return SQ_STATUS_WALL;
 
   if (newPos == currentSquare) // pac man found
   {
-    // check for player on a lock
     if (locks[currentSquare] == 1)
-      return SQ_STATUS_PAC_ON_LOCK;
-
+      return SQ_STATUS_PAC_ON_RED_LOCK;
     // Check for Pac Man on a treasure
     treasureType = checkForTreasure(pos);
 
@@ -1186,11 +1233,10 @@ function getSquareStatus(pos)
           return SQ_STATUS_PAC_ON_TREASURE_GOOD;
           break;
 
-        case TREASURE_TYPE_KEY:
-
-            console.log("Player landed on key");
-            return SQ_STATUS_PAC_ON_KEY;
-            break;
+        case TREASURE_TYPE_RED_KEY:
+          console.log("Player landed on key");
+          return SQ_STATUS_PAC_ON_RED_KEY;
+          break;
 
         default:
 
@@ -1216,10 +1262,9 @@ function getSquareStatus(pos)
     return SQ_STATUS_PAC_ON_BLANK;
   }
 
-  // Pac Man not in this square --- Check for other conditions
-
   if (locks[newPos] == 1)  // check for lock
-    return SQ_STATUS_LOCK;
+    return SQ_STATUS_RED_LOCK;
+  // Pac Man not in this square --- Check for other conditions
 
   treasureType = checkForTreasure(pos);
   if (treasureType > 0) {
@@ -1235,10 +1280,10 @@ function getSquareStatus(pos)
       case TREASURE_TYPE_GOOD:
         return SQ_STATUS_TREASURE_GOOD;
         break;
-
-      case TREASURE_TYPE_KEY:
-        return SQ_STATUS_TREASURE_KEY;
+      case TREASURE_TYPE_RED_KEY:
+        return SQ_STATUS_RED_KEY;
         break;
+
 
       default:
 
@@ -1292,11 +1337,10 @@ function checkForTreasure(pos)
   var anchorPos = pos + (hiddenPadding * boardSize) + (((row + 1) * 2 * hiddenPadding) - hiddenPadding);
   var newPos = anchorPos + (offsets[0]*boardSize) + offsets[1];
 
-  console.log("Check for Treasure - Current square is " + currentSquare + "  Pos is " + pos + "  Anchor pos is " + anchorPos + "  row offset is " + offsets[0] + "  Col offset is " + offsets[1] + "  New pos is " + newPos);
+  console.log("Check for NPC - Current square is " + currentSquare + "  Pos is " + pos + "  Anchor pos is " + anchorPos + "  row offset is " + offsets[0] + "  Col offset is " + offsets[1] + "  New pos is " + newPos);
 
   // you always need to go through the entire array of treasures to check for special ones.
-  while ((treasureFound == false) && (i < treasures.length))
-  {
+  while ((treasureFound == false) && (i < treasures.length)) {
     if (treasures[i][TREASURE_INDEX_POSITION] == newPos)
       treasureFound = true;
     else
@@ -1304,10 +1348,7 @@ function checkForTreasure(pos)
   }
 
   if (treasureFound == true)
-  {
-    // console.log("Player landed on treasure type " + treasures[i][TREASURE_INDEX_TYPE]);
     return treasures[i][TREASURE_INDEX_TYPE];
-  }
   else
     return 0;
 
@@ -1382,7 +1423,7 @@ function createTreasures()
   for (i = 0; i < treasureAmount; i++)
   {
     // treasureTypeNumber = Math.floor((Math.random() * 3) + 1);  // commented out for testing
-    treasureTypeNumber = TREASURE_TYPE_KEY;
+    treasureTypeNumber = TREASURE_TYPE_RED_KEY;
 
     foundSpot = false;
     while (foundSpot == false)
@@ -1412,9 +1453,9 @@ function createTreasures()
         break;
 
       case 5:
-        treasureType = TREASURE_TYPE_KEY;
+        treasureType = TREASURE_TYPE_RED_KEY;
         treasures.push([treasurePosition, treasureType]);
-        console.log("Key added to treasures array");
+        console.log("red Key added to treasures array");
         break;
 
       default:
@@ -1442,10 +1483,12 @@ function createTreasures()
         NPCPosition = Math.floor((Math.random() * (boardSize * boardSize)));
         // NPCPosition = 60; // Dad test
 
-        if (currentSquare != NPCPosition) {
+        if ((currentSquare != NPCPosition)&&(walls[NPCPosition] == 0)) {
           foundSpot = true;
         } // end if safe spot for a wall
       }
+
+console.log("create npc position found");
 
       switch (NPCNameNumber) {
         case 1:
@@ -1467,10 +1510,9 @@ function createTreasures()
 
 function createWalls()
 {
-    walls = [0,0,3,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,0,3,0,0,0,0,3,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0];
+    walls = [0,0,1,0,0,0,1,0,0,0,0,1,1,0,1,1,0,0,0,0,0,1,0,1,0,0,0,0,0,0,1,0,1,0,0,0,0,0,0,0,0,0,0,0,1,0,1,0,0,0,0,0,1,1,0,1,1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,0,0,0,0,1,1,0,0];
 
-    locks = [0,0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
-
+    locks = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,RED,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
 }
 
 // ----------------------------------------
@@ -1578,7 +1620,9 @@ document.getElementById("title").style.visibility = "hidden";
 
 themesong.play();
 
+
 createBoard();
+createWalls();
 createTreasures();
 createNPCs();
 squares = document.querySelectorAll('.square'); // faster to get first?
